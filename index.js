@@ -44,6 +44,13 @@ const run = () => {
       res.send(result)
     })
 
+    ///get order data ////
+    app.get('/orders', async(req, res)=>{
+      const query = {}
+      const result = await orderCollection.find(query).toArray()
+      res.send(result)
+    })
+
 
 
 
