@@ -20,20 +20,79 @@ const client = new MongoClient(uri, {
 
 const run = () => {
   try {
+
+  /// books category collection \\\
     const bookCategoriesCollection = client
       .db("books")
       .collection("books-categories");
+ /// All books collection ///
+    const booksCollection = client.db("books").collection("booksData");
 
+
+     /// user collection ///
+    const usersCollection = client.db("books").collection("users");
+ 
+
+    /// order collection///
+    const orderCollection = client.db("books").collection("orders");
+
+
+    /// buyer and order products info ///
+    app.post('/orders', async(req, res)=>{
+      const info = req.body;
+      const result = await orderCollection.insertOne(info)
+      res.send(result)
+    })
+
+
+
+
+
+    /// get all book categories ////
     app.get("/categories", async (req, res) => {
       const query = {};
       const result = await bookCategoriesCollection.find(query).toArray();
       res.send(result);
     });
+   /// get data with category id///
+    // app.get("/category/:id", async (req, res) => {
+    //   const id =  req.params.id;
+    //   console.log(id)
+    //   const singleCategory = await booksCollection.filter(
+    //     (data) => data.categoryId === id
+    //   ).toArray()
+
+    //   res.send(singleCategory);
+    // });
+
+
+    /// get all books collection ///
+    app.get("/category", async (req, res) => {
+      const query = {};
+
+      const allBooks = await booksCollection.find(query).toArray();
+      res.send(allBooks);
+    });
+
+   //// get user info  using post method \\\
+
+   app.post('/users' , async(req, res)=>{
+    const user = req.body
+    const result = await usersCollection.insertOne(user)
+    res.send(result)
+   })
+
+
+
+
+
+
+
   } finally {
   }
 };
 
-run()
+run();
 
 app.get("/", (req, res) => {
   res.send("Server is running");
