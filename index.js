@@ -120,6 +120,23 @@ const run = () => {
     
    })
 
+   /// get all sellers ///
+
+   app.get('/sellers',async(req, res)=>{
+    const query = {role : 'seller account'}
+    const result = await usersCollection.find(query).toArray()
+    res.send(result)
+   
+   })
+
+   /// get all buyers ///
+   app.get('/buyers',async(req, res)=>{
+    const query = {role : 'buyer account'}
+    const result = await usersCollection.find(query).toArray()
+    res.send(result)
+   
+   })
+
 
 
 
