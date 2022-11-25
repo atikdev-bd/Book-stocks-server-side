@@ -2,6 +2,7 @@ const express = require("express");
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
+const { query } = require("express");
 const port = process.env.PORT || 5000;
 const app = express();
 require("dotenv").config();
@@ -51,6 +52,24 @@ const run = () => {
       res.send(result)
     })
 
+    /// get buyer or not ///
+    app.get("/user/buyers/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email };
+      const user = await orderCollection.findOne(query);
+      if(user.buyerName){
+        res.send({isBuyer : true})
+      }
+    });
+
+    /// post book data ///
+    app.post("/books", async(req,res)=>{
+      const book = req.body
+      const result = await booksCollection.insertOne(book)
+      res.send(result)
+
+    })
+
 
 
 
@@ -87,6 +106,18 @@ const run = () => {
     const user = req.body
     const result = await usersCollection.insertOne(user)
     res.send(result)
+   })
+
+
+   /// get books data with name query///
+   app.get('/books' , async(req, res)=>{
+    const name = req.query.name
+    const query = {}
+    const allBooks = await booksCollection.find(query)
+    const nameQuery = {sellerName : name}
+    const result = await booksCollection.find(nameQuery).toArray()
+    res.send(result)
+    
    })
 
 
