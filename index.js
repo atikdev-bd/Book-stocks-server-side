@@ -1,5 +1,10 @@
 const express = require("express");
-const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const {
+  MongoClient,
+  ServerApiVersion,
+  Transaction,
+  ObjectId,
+} = require("mongodb");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const { query } = require("express");
@@ -10,6 +15,8 @@ require("dotenv").config();
 ///middle ware ///
 app.use(cors());
 app.use(express.json());
+
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 const uri = `mongodb+srv://${process.env.BOOK_DATA}:${process.env.PASSWORD}@cluster0.h7epoo8.mongodb.net/?retryWrites=true&w=majority`;
 console.log(uri);
@@ -28,6 +35,8 @@ const run = () => {
     /// All books collection ///
     const booksCollection = client.db("books").collection("booksData");
 
+    const paidUserCollection = client.db("books").collection("paidUser");
+
     /// user collection ///
     const usersCollection = client.db("books").collection("users");
 
@@ -43,10 +52,36 @@ const run = () => {
 
     ///get order data ////
     app.get("/orders", async (req, res) => {
-      const query = {};
+      const email = req.query.email;
+
+      const query = { email: email };
       const result = await orderCollection.find(query).toArray();
       res.send(result);
     });
+
+
+    ///payment integret///
+
+    app.post("/create-payment-intent", async (req, res) => {
+      const booking = req.body;
+      const price = booking.price;
+
+      const amount = price * 100;
+
+      // Create a PaymentIntent with the order amount and currency
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        payment_method_types: ["card"],
+      });
+
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    });
+
+
+
 
     /// get buyer or not ///
     app.get("/user/buyers/:email", async (req, res) => {
@@ -64,6 +99,10 @@ const run = () => {
       const result = await booksCollection.insertOne(book);
       res.send(result);
     });
+
+    ///PAYMENT METHOD STRIPE ///
+
+    /// create payment user in database///
 
     /// get all book categories ////
     app.get("/categories", async (req, res) => {
@@ -186,10 +225,6 @@ const run = () => {
 };
 
 run();
-
-app.get("/", (req, res) => {
-  res.send("Server is running");
-});
 
 app.get("/", (req, res) => {
   res.send("server is running");
