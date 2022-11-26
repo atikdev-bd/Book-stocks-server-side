@@ -131,12 +131,28 @@ const run = () => {
       res.send(result);
     });
 
+    /// delete buyer ///
+    app.delete("/buyers/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await usersCollection.deleteOne(query);
+      res.send(result);
+    });
+
     /// delete book ////
 
     app.delete("/books/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const result = await booksCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    //// get one book with id ///
+    app.get("/bookings/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await orderCollection.findOne(query);
       res.send(result);
     });
 
@@ -156,6 +172,13 @@ const run = () => {
         updateDoc,
         options
       );
+      res.send(result);
+    });
+
+    /// get advertise data ///
+    app.get("/advertise", async (req, res) => {
+      const advertise = { isAdvertise: true };
+      const result = await booksCollection.find(advertise).toArray();
       res.send(result);
     });
   } finally {
