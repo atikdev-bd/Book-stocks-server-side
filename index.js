@@ -35,6 +35,9 @@ const run = () => {
     /// All books collection ///
     const booksCollection = client.db("books").collection("booksData");
 
+
+    const paymentCollection = client.db("books").collection("paymentData");
+
     const paidUserCollection = client.db("books").collection("paidUser");
 
     /// user collection ///
@@ -67,7 +70,6 @@ const run = () => {
       const price = booking.price;
 
       const amount = price * 100;
-      ////jtji jdk
 
       // Create a PaymentIntent with the order amount and currency
       const paymentIntent = await stripe.paymentIntents.create({
@@ -80,6 +82,15 @@ const run = () => {
         clientSecret: paymentIntent.client_secret,
       });
     });
+
+    /// store payment data ///
+
+    app.post('/payment', async(req, res)=>{
+      const info = req.body
+      console.log(info)
+      const result = await paymentCollection.insertOne(info)
+      res.send(result)
+    })
 
 
 
@@ -196,7 +207,25 @@ const run = () => {
       res.send(result);
     });
 
-    /// up
+    /// upsert some word in order data ///
+
+    app.get('/order/:id', async(req, res)=>{
+      const id = req.params.id
+      console.log(id);
+      const filter = { _id: ObjectId(id) };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: {
+          sold: true,
+        },
+      };
+      const result = await orderCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+      res.send(result);
+    })
 
     app.put("/books/:id", async (req, res) => {
       const id = req.params.id;
@@ -214,6 +243,29 @@ const run = () => {
       );
       res.send(result);
     });
+
+
+    //// change book sold ////
+
+    app.get('/booksName', async(req,res)=>{
+      const name = req.query.name 
+      const filter = {name : name}
+      console.log(filter);
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: {
+          sold: true,
+        },
+      };
+      const result = await booksCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+      res.send(result);
+      console.log(result)
+      console.log(name)
+    })
 
     /// get advertise data ///
     app.get("/advertise", async (req, res) => {
