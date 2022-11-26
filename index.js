@@ -67,6 +67,7 @@ const run = () => {
       const price = booking.price;
 
       const amount = price * 100;
+      ////jtji jdk
 
       // Create a PaymentIntent with the order amount and currency
       const paymentIntent = await stripe.paymentIntents.create({
