@@ -18,18 +18,13 @@ app.use(express.json());
 
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
-console.log(process.env.ACCESS_TOKEN)
-
 const uri = `mongodb+srv://${process.env.BOOK_DATA}:${process.env.PASSWORD}@cluster0.h7epoo8.mongodb.net/?retryWrites=true&w=majority`;
-console.log(uri);
+
 const client = new MongoClient(uri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
   serverApi: ServerApiVersion.v1,
 });
-
-
-
 
 const verifyJwt = async (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -49,8 +44,6 @@ const verifyJwt = async (req, res, next) => {
   });
 };
 
-
-
 const run = () => {
   try {
     /// books category collection \\\
@@ -59,7 +52,6 @@ const run = () => {
       .collection("books-categories");
     /// All books collection ///
     const booksCollection = client.db("books").collection("booksData");
-
 
     const paymentCollection = client.db("books").collection("paymentData");
 
@@ -87,7 +79,6 @@ const run = () => {
       res.send(result);
     });
 
-
     ///payment intent///
 
     app.post("/create-payment-intent", async (req, res) => {
@@ -110,14 +101,11 @@ const run = () => {
 
     /// store payment data ///
 
-    app.post('/payment', async(req, res)=>{
-      const info = req.body
-      const result = await paymentCollection.insertOne(info)
-      res.send(result)
-    })
-
-
-
+    app.post("/payment", async (req, res) => {
+      const info = req.body;
+      const result = await paymentCollection.insertOne(info);
+      res.send(result);
+    });
 
     /// get buyer or not ///
     app.get("/user/buyers/:email", async (req, res) => {
@@ -144,18 +132,9 @@ const run = () => {
     app.get("/categories", async (req, res) => {
       const query = {};
       const result = await bookCategoriesCollection.find(query).toArray();
+
       res.send(result);
     });
-    /// get data with category id///
-    // app.get("/category/:id", async (req, res) => {
-    //   const id =  req.params.id;
-    //   console.log(id)
-    //   const singleCategory = await booksCollection.filter(
-    //     (data) => data.categoryId === id
-    //   ).toArray()
-
-    //   res.send(singleCategory);
-    // });
 
     /// get all books collection ///
     app.get("/category", async (req, res) => {
@@ -206,6 +185,23 @@ const run = () => {
       res.send(result);
     });
 
+    ///verify seller///
+
+    app.get("/verify/:id", async (req, res) => {
+      const id = req.params.id;
+
+      const filter = { _id: ObjectId(id) };
+      const option = { upsert: true };
+      const updateDoc = {
+        $set: {
+          verified: true,
+        },
+      };
+
+      const result = await usersCollection.updateOne(filter, updateDoc, option);
+      res.send(result);
+    });
+
     /// delete buyer ///
     app.delete("/buyers/:id", async (req, res) => {
       const id = req.params.id;
@@ -233,9 +229,9 @@ const run = () => {
 
     /// upsert some word in order data ///
 
-    app.get('/order/:id', async(req, res)=>{
-      const id = req.params.id
-   
+    app.get("/order/:id", async (req, res) => {
+      const id = req.params.id;
+
       const filter = { _id: ObjectId(id) };
       const options = { upsert: true };
       const updateDoc = {
@@ -249,7 +245,7 @@ const run = () => {
         options
       );
       res.send(result);
-    })
+    });
 
     app.put("/books/:id", async (req, res) => {
       const id = req.params.id;
@@ -268,13 +264,12 @@ const run = () => {
       res.send(result);
     });
 
-
     //// change book sold ////
 
-    app.get('/booksName', async(req,res)=>{
-      const name = req.query.name 
-      const filter = {name : name}
-   
+    app.get("/booksName", async (req, res) => {
+      const name = req.query.name;
+      const filter = { name: name };
+
       const options = { upsert: true };
       const updateDoc = {
         $set: {
@@ -287,8 +282,7 @@ const run = () => {
         options
       );
       res.send(result);
-      
-    })
+    });
 
     /// get advertise data ///
     app.get("/advertise", async (req, res) => {
@@ -297,33 +291,27 @@ const run = () => {
       res.send(result);
     });
 
-
     ///delete seller user ///
-  app.delete('/seller/:id', async(req,res)=>{
-    const id = req.params.id 
-  
-    const query = {_id : ObjectId(id)}
-    const result = await usersCollection.deleteOne(query)
-    res.send(result)
-  })
+    app.delete("/seller/:id", async (req, res) => {
+      const id = req.params.id;
 
+      const query = { _id: ObjectId(id) };
+      const result = await usersCollection.deleteOne(query);
+      res.send(result);
+    });
 
-  /// jwt Token ///
-  app.get("/jwt", async (req, res) => {
-    const email = req.query.email;
-    const query = { email: email };
-    const user = await usersCollection.find(query);
-    console.log(user)
-    if (user) {
-      const token = jwt.sign({ email }, process.env.ACCESS_TOKEN);
-      return res.send({ AccessToken: token });
-    }
-    res.status(403).send({ AccessToken: "" });
-  });
+    /// jwt Token ///
+    app.get("/jwt", async (req, res) => {
+      const email = req.query.email;
+      const query = { email: email };
+      const user = await usersCollection.find(query);
 
-
-
-
+      if (user) {
+        const token = jwt.sign({ email }, process.env.ACCESS_TOKEN);
+        return res.send({ AccessToken: token });
+      }
+      res.status(403).send({ AccessToken: "" });
+    });
   } finally {
   }
 };
