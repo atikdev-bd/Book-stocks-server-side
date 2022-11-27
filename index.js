@@ -7,7 +7,7 @@ const {
 } = require("mongodb");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
-const { query } = require("express");
+
 const port = process.env.PORT || 5000;
 const app = express();
 require("dotenv").config();
@@ -18,6 +18,8 @@ app.use(express.json());
 
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
+console.log(process.env.ACCESS_TOKEN)
+
 const uri = `mongodb+srv://${process.env.BOOK_DATA}:${process.env.PASSWORD}@cluster0.h7epoo8.mongodb.net/?retryWrites=true&w=majority`;
 console.log(uri);
 const client = new MongoClient(uri, {
@@ -25,6 +27,29 @@ const client = new MongoClient(uri, {
   useUnifiedTopology: true,
   serverApi: ServerApiVersion.v1,
 });
+
+
+
+
+const verifyJwt = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).send("unauthorized access");
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  jwt.verify(token, process.env.ACCESS_TOKEN, (error, decoded) => {
+    if (error) {
+      return res.status(403).send({ massage: "forbidden access" });
+    }
+
+    req.decoded = decoded;
+    next();
+  });
+};
+
+
 
 const run = () => {
   try {
@@ -63,7 +88,7 @@ const run = () => {
     });
 
 
-    ///payment integret///
+    ///payment intent///
 
     app.post("/create-payment-intent", async (req, res) => {
       const booking = req.body;
@@ -87,7 +112,6 @@ const run = () => {
 
     app.post('/payment', async(req, res)=>{
       const info = req.body
-      console.log(info)
       const result = await paymentCollection.insertOne(info)
       res.send(result)
     })
@@ -211,7 +235,7 @@ const run = () => {
 
     app.get('/order/:id', async(req, res)=>{
       const id = req.params.id
-      console.log(id);
+   
       const filter = { _id: ObjectId(id) };
       const options = { upsert: true };
       const updateDoc = {
@@ -250,7 +274,7 @@ const run = () => {
     app.get('/booksName', async(req,res)=>{
       const name = req.query.name 
       const filter = {name : name}
-      console.log(filter);
+   
       const options = { upsert: true };
       const updateDoc = {
         $set: {
@@ -263,8 +287,7 @@ const run = () => {
         options
       );
       res.send(result);
-      console.log(result)
-      console.log(name)
+      
     })
 
     /// get advertise data ///
@@ -273,6 +296,34 @@ const run = () => {
       const result = await booksCollection.find(advertise).toArray();
       res.send(result);
     });
+
+
+    ///delete seller user ///
+  app.delete('/seller/:id', async(req,res)=>{
+    const id = req.params.id 
+  
+    const query = {_id : ObjectId(id)}
+    const result = await usersCollection.deleteOne(query)
+    res.send(result)
+  })
+
+
+  /// jwt Token ///
+  app.get("/jwt", async (req, res) => {
+    const email = req.query.email;
+    const query = { email: email };
+    const user = await usersCollection.find(query);
+    console.log(user)
+    if (user) {
+      const token = jwt.sign({ email }, process.env.ACCESS_TOKEN);
+      return res.send({ AccessToken: token });
+    }
+    res.status(403).send({ AccessToken: "" });
+  });
+
+
+
+
   } finally {
   }
 };
